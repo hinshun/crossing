@@ -1,18 +1,24 @@
-export blathers
+export crossing
 export dll
 export decompileAll
 
-fs blathers() {
-	copy output "Blathers.dll" "Blathers.dll"
+fs crossing() {
+	copy output "Crossing.dll" "Crossing.dll"
 }
 
 fs build() {
 	dotnet
 	run "dotnet build -o /out" with option {
 		dir "/in"
-		mount local(".") "/in"
-		mount dll "/dll" with readonly
+		mount src "/in"
+		mount dll "/in/dll" with readonly
 		mount scratch "/out" as output
+	}
+}
+
+fs src() {
+	local "." with option {
+		includePatterns "*.cs" "Crossing.csproj"
 	}
 }
 

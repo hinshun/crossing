@@ -3,7 +3,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
-
   <ItemGroup>
     <Reference Include="Eco.Core">
       <HintPath>./dll/Eco.Core.dll</HintPath>
@@ -38,5 +37,8 @@
     <Reference Include="Eco.WorldGenerator">
       <HintPath>./dll/Eco.WorldGenerator.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Discord.Net" Version="2.2.0"/>
   </ItemGroup>
 </Project>

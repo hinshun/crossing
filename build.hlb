@@ -5,13 +5,13 @@ fs default() {
 }
 
 fs dist() {
-	eco.blathers
+	eco.crossing
 	download "./dist"
 }
 
 fs publish() {
-	eco.blathers
-	dockerPush "hinshun/blathers"
+	eco.crossing
+	dockerPush "hinshun/crossing"
 }
 
 fs dll() {
