@@ -1,0 +1,97 @@
+fs default() {
+	publish
+}
+
+fs publish() {
+	mod
+	dockerPush "hinshun/blathers"
+}
+
+fs downloadDll() {
+	dll
+	download "./dll"
+}
+
+fs downloadDecompile() {
+	decompileAll
+	download "./decompile"
+}
+
+fs dist() {
+	mod
+	download "./dist"
+}
+
+fs mod() {
+	copy output "Blathers.dll" "Blathers.dll"
+}
+
+fs build() {
+	dotnet
+	run "dotnet build -o /out" with option {
+		dir "/in"
+		mount local(".") "/in"
+		mount dll "/dll" with readonly
+		mount scratch "/out" as output
+	}
+}
+
+fs eco() {
+	image "strangeloopgames/eco-game-server:0.9.0.0-beta-staging-1756"
+}
+
+fs dotnet() {
+	image "debian"
+	run "apt-get update && apt-get install --no-install-recommends -y ca-certificates netbase libc6 libgcc1 libgssapi-krb5-2 libicu63 libssl1.1 libstdc++6 zlib1g"
+	copy eco "/usr/share/dotnet" "/usr/share/dotnet"
+	run "ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet"
+}
+
+fs _dll() {
+	eco
+	run `find . -name "*.dll" ! -name "Microsoft.*" ! -name "System.*" -exec cp {} /out \;` with option {
+		dir "/app"
+		mount scratch "/out" as dll
+	}
+}
+
+fs ilspycmd() {
+	dotnet
+	run "dotnet tool install ilspycmd -g"
+}
+
+fs decompileAll() {
+	copy decompile("Eco.Core.dll") "/" "/"
+	copy decompile("Eco.Gameplay.dll") "/" "/"
+	copy decompile("Eco.ModKit.dll") "/" "/"
+	copy decompile("Eco.Networking.ENet.dll") "/" "/"
+	copy decompile("Eco.Plugins.dll") "/" "/"
+	copy decompile("Eco.Shared.dll") "/" "/"
+	copy decompile("Eco.Simulation.dll") "/" "/"
+	copy decompile("Eco.Stats.dll") "/" "/"
+	copy decompile("Eco.WebServer.dll") "/" "/"
+	copy decompile("Eco.World.dll") "/" "/"
+	copy decompile("Eco.WorldGenerator.dll") "/" "/"
+	# copy decompile("EcoServer.dll") "/" "/"
+}
+
+fs _decompile(string assembly) {
+	ilspycmd
+	run "/root/.dotnet/tools/ilspycmd /in/${assembly} -o /out" with option {
+		mount dll "/in"
+		mount scratch "/out" as decompile
+	}
+}
+
+fs new() {
+	classlib
+	download "."
+}
+
+fs _classlib() {
+	dotnet
+	run "dotnet new classlib" with option {
+		dir "/out"
+		mount scratch "/out" as classlib
+	}
+}
