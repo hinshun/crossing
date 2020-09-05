@@ -1,14 +1,32 @@
+export server
 export crossing
 export dll
 export decompileAll
 
+string server() {
+	"138.68.57.59"
+}
+
 fs crossing() {
 	copy output "Crossing.dll" "Crossing.dll"
+	copy output "Discord.Net.Commands.dll" "Discord.Net.Commands.dll"
+	copy output "Discord.Net.Core.dll" "Discord.Net.Core.dll"
+	copy output "Discord.Net.Rest.dll" "Discord.Net.Rest.dll"
+	copy output "Discord.Net.WebSocket.dll" "Discord.Net.WebSocket.dll"
+	copy output "Discord.Net.Webhook.dll" "Discord.Net.Webhook.dll"
+}
+
+fs inspect() {
+	image "alpine"
+	run "ls -la" with option {
+		dir "/in"
+		mount output "/in"
+	}
 }
 
 fs build() {
 	dotnet
-	run "dotnet build -o /out" with option {
+	run "dotnet publish -o /out" with option {
 		dir "/in"
 		mount src "/in"
 		mount dll "/in/dll" with readonly
@@ -18,7 +36,7 @@ fs build() {
 
 fs src() {
 	local "." with option {
-		includePatterns "*.cs" "Crossing.csproj"
+		includePatterns "**/*.cs" "Crossing.csproj"
 	}
 }
 
