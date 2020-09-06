@@ -74,7 +74,7 @@ namespace Crossing
 
         private async Task ReadyAsync()
         {
-            _debug = (IMessageChannel)_client.GetChannel(Guild.GeneralChannel);
+            _debug = (IMessageChannel)_client.GetChannel(Guild.DebugChannel);
             if (_debug == null)
             {
                 throw new Exception("[BLATHERS] Could not find channel");
@@ -99,7 +99,7 @@ namespace Crossing
 
             switch (message.Channel.Name)
             {
-                case "debug":
+                case "general":
                     HandleGeneral(message);
                     break;
             }
