@@ -34,8 +34,8 @@
     <Reference Include="Eco.World">
       <HintPath>./dll/Eco.World.dll</HintPath>
     </Reference>
-    <Reference Include="Eco.WorldGenerator">
-      <HintPath>./dll/Eco.WorldGenerator.dll</HintPath>
+    <Reference Include="DiscordSDK">
+      <HintPath>./dll/discord_game_sdk.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

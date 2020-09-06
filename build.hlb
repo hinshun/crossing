@@ -1,4 +1,5 @@
 import eco from "./eco.hlb"
+import discord from "./discord.hlb"
 
 fs default() {
 	publish
@@ -23,7 +24,13 @@ fs publish() {
 
 fs dll() {
 	eco.dll
+	copy discord.sdk() "/lib/x86_64/discord_game_sdk.dll" "discord_game_sdk.dll"
 	download "./dll"
+}
+
+fs discordSDK() {
+	discord.csharp
+	download "./DiscordGameSDK"
 }
 
 fs decompile() {

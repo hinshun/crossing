@@ -5,30 +5,25 @@ using Discord;
 using Discord.Commands;
 using Discord.Webhook;
 using Discord.WebSocket;
-using Eco.Core.IoC;
 using Eco.Core.Plugins.Interfaces;
 using Eco.Core.Utils;
 using Eco.Gameplay.GameActions;
 using Eco.Gameplay.Players;
 using Eco.Gameplay.Systems.Chat;
-using Eco.Gameplay.Systems.TextLinks;
 using Eco.Shared.Localization;
 using Eco.Shared.Services;
 using Eco.Shared.Utils;
-using Eco.Simulation.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Crossing.Services;
-using Eco.Gameplay.Items;
-using Eco.Gameplay.Systems.Tooltip;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Crossing
 {
     public class Crossing : IModKitPlugin, IInitializablePlugin
     {
+        private static Guild Guild => AutoSingleton<Guild>.Obj;
+
         public string GetStatus()
         {
             return String.Empty;
@@ -38,6 +33,7 @@ namespace Crossing
         {
             DiscordSocketClient blatherDiscord = new DiscordSocketClient();
             DiscordSocketClient isabelleDiscord = new DiscordSocketClient();
+            var discord = new DiscordSDK.Discord(Guild.IsabelleClientId, (UInt64)DiscordSDK.CreateFlags.Default);
 
             using (var services = ConfigureServices())
             {
@@ -151,6 +147,12 @@ namespace Crossing
             get;
             set;
         } = "https://i.imgur.com/qwPbkaW.png";
+
+        public long IsabelleClientId
+        {
+            get;
+            set;
+        } = 751263733220900904;
     }
 
     public class EcoCommands : IChatCommandHandler

@@ -1,3 +1,5 @@
+import discord from "./discord.hlb"
+
 export server
 export crossing
 export dll
@@ -14,6 +16,7 @@ fs crossing() {
 	copy output "Discord.Net.Rest.dll" "Discord.Net.Rest.dll"
 	copy output "Discord.Net.WebSocket.dll" "Discord.Net.WebSocket.dll"
 	copy output "Discord.Net.Webhook.dll" "Discord.Net.Webhook.dll"
+	copy discord.sdk() "/lib/x86_64/discord_game_sdk.dll" "discord_game_sdk.dll"
 }
 
 fs inspect() {
