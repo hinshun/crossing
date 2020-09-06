@@ -119,6 +119,7 @@ namespace Crossing
                 if (mentionUser == null) { continue; }
                 
                 user.Player.GiveReputationTo(mentionUser.Name, 1, message.Content);
+                await _debug.SendMessageAsync($"{message.Author.Mention} gave {mention.Mention} 1 reputation by thanking them in a mention.");
             }
 
             await message.AddReactionAsync(new Emoji("🏅"));
