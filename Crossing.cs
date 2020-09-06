@@ -88,25 +88,30 @@ namespace Crossing
             switch (action)
             {
                 case ChatSent chat:
-                    string discordId = _identity.SteamToDiscord.GetOrDefault(chat.Citizen.SteamId);
-                    if (discordId == "")
-                    {
-                        break;
-                    }
-
-                    ulong id = Convert.ToUInt64(discordId);
-                    SocketUser discordUser = _blathers.SocketGuild().GetUser(id);
-                    if (discordUser == null)
-                    {
-                        break;
-                    }
-
-                    Log.WriteLine(Localizer.Do($"ECO->Discord {discordUser.Username}: {chat.Message}"));
-                    _webhookClient.SendMessageAsync($"{chat.Message}", false, null, discordUser.Username, Guild.EcoGlobeAvatar).Wait();
+                    HandleChatSent(chat).Wait();
                     break;
                 default:
                     break;
             }
+        }
+
+        private async Task HandleChatSent(ChatSent chat)
+        {
+            string discordId = _identity.SteamToDiscord.GetOrDefault(chat.Citizen.SteamId);
+            if (discordId == "")
+            {
+                return;
+            }
+
+            ulong id = Convert.ToUInt64(discordId);
+            SocketUser discordUser = _blathers.SocketGuild().GetUser(id);
+            if (discordUser == null)
+            {
+                return;
+            }
+
+            Log.WriteLine(Localizer.Do($"ECO->Discord {discordUser.Username}: {chat.Message}"));
+            await _webhookClient.SendMessageAsync($"{chat.Message}", false, null, discordUser.Username, Guild.EcoGlobeAvatar);
         }
 
         public Result ShouldOverrideAuth(GameAction action)
