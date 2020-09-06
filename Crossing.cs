@@ -97,7 +97,7 @@ namespace Crossing
                     }
 
                     Log.WriteLine(Localizer.Do($"ECO->Discord {discordUser.Username}: {chat.Message}"));
-                    _webhookClient.SendMessageAsync($"{chat.Message}", false, null, chat.Citizen.Name, Guild.EcoGlobeAvatar).Wait();
+                    _webhookClient.SendMessageAsync($"{chat.Message}", false, null, discordUser.Username, Guild.EcoGlobeAvatar).Wait();
                     break;
                 default:
                     break;
