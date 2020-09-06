@@ -6,7 +6,8 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "BUILDKIT_HOST=docker-container://buildkitd hlb run"
+            "command": "BUILDKIT_HOST=docker-container://buildkitd hlb run",
+            "problemMatcher": []
         }
     ]
 }

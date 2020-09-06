@@ -11,24 +11,26 @@ namespace Crossing.Services
     public class CommandHandlingService
     {
         private readonly CommandService _commands;
-        private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
+        private DiscordSocketClient _discord;
 
         public CommandHandlingService(IServiceProvider services)
         {
             _commands = services.GetRequiredService<CommandService>();
-            _discord = services.GetRequiredService<DiscordSocketClient>();
+            //_discord = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
 
             // Hook CommandExecuted to handle post-command-execution logic.
             _commands.CommandExecuted += CommandExecutedAsync;
+        }
+
+        public async Task InitializeAsync(DiscordSocketClient discord)
+        {
+            _discord = discord;
             // Hook MessageReceived so we can process each message to see
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
-        }
 
-        public async Task InitializeAsync()
-        {
             // Register modules that are public and inherit ModuleBase<T>.
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
         }

@@ -15,6 +15,7 @@ fs publish() {
 	mkdir "/root/.ssh" 0o700
 	run "ssh-keyscan -t rsa ${eco.server()} >> ~/.ssh/known_hosts"
 	run "scp -r /Crossing root@${eco.server()}:/home/steam/staging" with option {
+		ignoreCache
 		ssh
 		mount eco.crossing() "/Crossing"
 	}

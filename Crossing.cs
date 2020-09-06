@@ -34,24 +34,26 @@ namespace Crossing
 
         public void Initialize(TimedTask timer)
         {
-            var relay = new ChatRelay();
-            ActionUtil.AddListener(relay);
+            DiscordSocketClient discord = new DiscordSocketClient();
 
             using (var services = ConfigureServices())
             {
-                services.GetRequiredService<CommandHandlingService>().InitializeAsync().Wait();
-                services.GetRequiredService<IdentityManager>().InitializeAsync().Wait();
-                services.GetRequiredService<Blathers>().InitializeAsync().Wait();
+                services.GetRequiredService<IdentityManager>().Initialize();
+                services.GetRequiredService<CommandHandlingService>().InitializeAsync(discord).Wait();
+                services.GetRequiredService<Blathers>().InitializeAsync(discord).Wait();
                 EcoCommands.Initialize(services);
+
+                var relay = new ChatRelay(services);
+                ActionUtil.AddListener(relay);
             }
 
+            Log.WriteLine(Localizer.Do($"Crossing is initialized!"));
             ChatManager.ServerMessageToAllLoc($"Crossing is initialized! Version 0.1", DefaultChatTags.General);
         }
 
         private ServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
-                .AddSingleton<DiscordSocketClient>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<IdentityManager>()
@@ -63,10 +65,14 @@ namespace Crossing
     public class ChatRelay : IGameActionAware
     {
         private static Guild Guild => AutoSingleton<Guild>.Obj;
+        private readonly IdentityManager _identity;
+        private readonly Blathers _blathers;
         private DiscordWebhookClient _webhookClient;
 
-        public ChatRelay()
+        public ChatRelay(IServiceProvider services)
         {
+            _identity = services.GetRequiredService<IdentityManager>();
+            _blathers = services.GetRequiredService<Blathers>();
             _webhookClient = new DiscordWebhookClient(
                 $"https://discordapp.com/api/webhooks/{Guild.Application}/{Environment.GetEnvironmentVariable("WEBHOOK_TOKEN")}"
             );
@@ -77,11 +83,20 @@ namespace Crossing
             switch (action)
             {
                 case ChatSent chat:
-                    if (chat.Tag == "discord")
+                    string discordId = _identity.SteamToDiscord.GetOrDefault(chat.Citizen.SteamId);
+                    if (discordId == "")
                     {
                         break;
                     }
-                    Log.WriteLine(Localizer.Do($"ECO->Discord {chat.Citizen.Name}: {chat.Message}"));
+
+                    ulong id = Convert.ToUInt64(discordId);
+                    SocketUser discordUser = _blathers.SocketGuild().GetUser(id);
+                    if (discordUser == null)
+                    {
+                        break;
+                    }
+
+                    Log.WriteLine(Localizer.Do($"ECO->Discord {discordUser.Username}: {chat.Message}"));
                     _webhookClient.SendMessageAsync($"{chat.Message}", false, null, chat.Citizen.Name, Guild.EcoGlobeAvatar).Wait();
                     break;
                 default:
@@ -97,6 +112,12 @@ namespace Crossing
 
     public class Guild : AutoSingleton<Guild>
     {
+        public ulong Id
+        {
+            get;
+            set;
+        } = 750916474930987083;
+
         public ulong Application
         {
             get;
@@ -126,11 +147,18 @@ namespace Crossing
     {
         private static Guild Guild => AutoSingleton<Guild>.Obj;
 
-        private static IdentityManager _identity;
+        private readonly IdentityManager _identity;
 
-        private static DiscordSocketClient _client;
+        private DiscordSocketClient _client;
 
-        private static IMessageChannel _debug;
+        private IMessageChannel _debug;
+
+        private SocketGuild _guild;
+
+        public SocketGuild SocketGuild()
+        {
+            return _guild;
+        }
 
         private static bool _ready;
         public bool Ready()
@@ -141,30 +169,59 @@ namespace Crossing
         public Blathers(IServiceProvider services)
         {
             _identity = services.GetRequiredService<IdentityManager>();
-            _client = services.GetRequiredService<DiscordSocketClient>();
         }
 
-        public async Task InitializeAsync()
+        public async Task InitializeAsync(DiscordSocketClient discord)
         {
-            await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("BLATHERS_TOKEN"));
-            await _client.StartAsync();
+            Log.WriteLine(Localizer.Do($"Blathers initializing."));
 
-            _client.Ready += ClientReady;
+            _client = discord;
+            _client.Log += LogAsync;
+            _client.Ready += ReadyAsync;
             _client.MessageReceived += MessageReceivedAsync;
+
+            try
+            {
+                await _client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("BLATHERS_TOKEN"));
+                await _client.StartAsync();
+                Log.WriteLine(Localizer.Do($"Succesfully logged in to Discord"));
+            } catch (Exception e)
+            {
+                Log.WriteLine(Localizer.Do($"Error logging in to Discord {e.ToString()}"));
+            }
         }
 
-        private async Task ClientReady()
+        private Task LogAsync(LogMessage msg)
         {
-            _debug = (IMessageChannel)_client.GetChannel(Guild.BlathersChannel);
-            await _debug.SendMessageAsync("Blathers connected.");
-            _ready = true;
+            Log.WriteLine(Localizer.Do($"[DISCORD] {msg.ToString()}"));
+            return Task.CompletedTask;
         }
 
-        private async Task MessageReceivedAsync(SocketMessage message)
+        private async Task ReadyAsync()
+        {
+            Log.WriteLine(Localizer.Do($"Blathers ready."));
+
+            _debug = (IMessageChannel)_client.GetChannel(Guild.BlathersChannel);
+            if (_debug == null)
+            {
+                throw new Exception("Could not find blathers channel");
+            }
+            
+            _guild = _client.GetGuild(Guild.Id);
+            if (_guild == null)
+            {
+                throw new Exception("Could not find guild");
+            }
+
+            _ready = true;
+            await _debug.SendMessageAsync("Blathers connected.");
+        }
+
+        private Task MessageReceivedAsync(SocketMessage message)
         {
             if (message.Author.IsBot || message.Author.IsWebhook)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             switch (message.Channel.Name)
@@ -173,6 +230,8 @@ namespace Crossing
                     HandleGeneral(message);
                     break;
             }
+
+            return Task.CompletedTask;
         }
 
         private void HandleGeneral(SocketMessage message)
@@ -196,34 +255,36 @@ namespace Crossing
                 ServiceHolder<IChatManager>.Obj.ProcessMessage(msg);
             }
         }
-
-        public void Debug(string msg)
-        {
-            if (!_ready)
-            {
-                return;
-            }
-            Log.WriteLine(Localizer.Do($"[Blathers] ${msg}"));
-        }
     }
 
     public class EcoCommands : IChatCommandHandler
     {
         private static IdentityManager _identity;
 
-        private static DiscordSocketClient _client;
+        private static Blathers _blathers;
 
         public static void Initialize(IServiceProvider services)
         {
             _identity = services.GetRequiredService<IdentityManager>();
-            _client = services.GetRequiredService<DiscordSocketClient>();
+            _blathers = services.GetRequiredService<Blathers>();
         }
 
         [ChatCommand("Link your discord account.")]
         public static void LinkDiscord(User user, string discordId)
         {
+            if (_blathers == null)
+            {
+                user.Player.MsgLoc($"blathers is null");
+                return;
+            }
+            if (_blathers.SocketGuild() == null)
+            {
+                user.Player.MsgLoc($"socket guild is null");
+                return;
+            }
+
             ulong id = Convert.ToUInt64(discordId);
-            SocketUser discordUser = _client.GetUser(id);
+            SocketUser discordUser = _blathers.SocketGuild().GetUser(id);
             if (discordUser == null)
             {
                 user.Player.MsgLoc($"We couldn't find a discord user with id {id}");
@@ -258,7 +319,7 @@ namespace Crossing
             DiscordToSteam = new Dictionary<string, string>();
         }
 
-        public async Task InitializeAsync()
+        public void Initialize()
         {
             string steam2discord = File.ReadAllText("/app/Mods/Crossing/steam2discord.json");
             SteamToDiscord = JsonConvert.DeserializeObject<Dictionary<string, string>>(steam2discord);
