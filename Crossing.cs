@@ -5,25 +5,23 @@ using Discord;
 using Discord.Commands;
 using Discord.Webhook;
 using Discord.WebSocket;
-using Eco.Core.IoC;
 using Eco.Core.Plugins.Interfaces;
 using Eco.Core.Utils;
 using Eco.Gameplay.GameActions;
 using Eco.Gameplay.Players;
 using Eco.Gameplay.Systems.Chat;
-using Eco.Gameplay.Systems.TextLinks;
 using Eco.Shared.Localization;
 using Eco.Shared.Services;
 using Eco.Shared.Utils;
-using Eco.Simulation.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Crossing.Services;
-using Eco.Gameplay.Items;
-using Eco.Gameplay.Systems.Tooltip;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
+using Eco.Gameplay.Systems.Tooltip;
+using Eco.Shared.Items;
+using Eco.Gameplay.Economy;
+using Eco.Gameplay.Economy.Contracts;
+using System.Linq;
 
 namespace Crossing
 {
@@ -64,59 +62,6 @@ namespace Crossing
                 .AddSingleton<Blathers>()
                 .AddSingleton<Isabelle>()
                 .BuildServiceProvider();
-        }
-    }
-
-    public class ChatRelay : IGameActionAware
-    {
-        private static Guild Guild => AutoSingleton<Guild>.Obj;
-        private readonly IdentityManager _identity;
-        private readonly Blathers _blathers;
-        private DiscordWebhookClient _webhookClient;
-
-        public ChatRelay(IServiceProvider services)
-        {
-            _identity = services.GetRequiredService<IdentityManager>();
-            _blathers = services.GetRequiredService<Blathers>();
-            _webhookClient = new DiscordWebhookClient(
-                $"https://discordapp.com/api/webhooks/{Guild.Application}/{Environment.GetEnvironmentVariable("WEBHOOK_TOKEN")}"
-            );
-        }
-
-        public void ActionPerformed(GameAction action)
-        {
-            switch (action)
-            {
-                case ChatSent chat:
-                    HandleChatSent(chat).Wait();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private async Task HandleChatSent(ChatSent chat)
-        {
-            string discordId = _identity.SteamToDiscord.GetOrDefault(chat.Citizen.SteamId);
-            if (discordId == "")
-            {
-                return;
-            }
-
-            ulong id = Convert.ToUInt64(discordId);
-            SocketUser discordUser = _blathers.SocketGuild().GetUser(id);
-            if (discordUser == null)
-            {
-                return;
-            }
-
-            Log.WriteLine(Localizer.Do($"ECO->Discord {discordUser.Username}: {chat.Message}"));
-            await _webhookClient.SendMessageAsync($"{chat.Message}", false, null, discordUser.Username, Guild.EcoGlobeAvatar);
-        }
-
-        public Result ShouldOverrideAuth(GameAction action)
-        {
-            return Result.FailedNoMessage;
         }
     }
 
