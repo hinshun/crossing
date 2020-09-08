@@ -1,29 +1,19 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Discord;
-using Discord.Commands;
 using Discord.Webhook;
 using Discord.WebSocket;
-using Eco.Core.Plugins.Interfaces;
 using Eco.Core.Utils;
 using Eco.Gameplay.GameActions;
 using Eco.Gameplay.Players;
-using Eco.Gameplay.Systems.Chat;
 using Eco.Shared.Localization;
 using Eco.Shared.Services;
 using Eco.Shared.Utils;
 using Microsoft.Extensions.DependencyInjection;
-using Crossing.Services;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Eco.Gameplay.Systems.Tooltip;
 using Eco.Shared.Items;
-using Eco.Gameplay.Economy;
 using Eco.Gameplay.Economy.Contracts;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Eco.World;
 using Eco.Gameplay.Economy.WorkParties;
 
 namespace Crossing
@@ -182,7 +172,7 @@ namespace Crossing
                     var contractEmbed = new EmbedBuilder
                     {
                         Author = AuthorBuilder(postedContract.Client),
-                        Description = contract.ClauseDesc()
+                        Description = contract.ClauseDesc().StripTags()
                     };
 
                     username = Username(postedContract.Client);
@@ -203,7 +193,7 @@ namespace Crossing
                     var workPartyEmbed = new EmbedBuilder
                     {
                         Author = AuthorBuilder(postedWorkParty.Client),
-                        Description = workParty.Description()
+                        Description = workParty.Description().ToString().StripTags()
                     };
 
                     username = Username(postedWorkParty.Client);

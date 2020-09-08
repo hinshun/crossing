@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.Webhook;
 using Discord.WebSocket;
 using Eco.Core.Plugins.Interfaces;
 using Eco.Core.Utils;
@@ -17,11 +16,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Crossing.Services;
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Eco.Gameplay.Systems.Tooltip;
-using Eco.Shared.Items;
-using Eco.Gameplay.Economy;
-using Eco.Gameplay.Economy.Contracts;
-using System.Linq;
 
 namespace Crossing
 {

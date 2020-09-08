@@ -14,7 +14,6 @@ using Eco.Simulation.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Eco.Gameplay.Items;
 using Eco.Gameplay.Systems.Tooltip;
-using System.Collections.Generic;
 
 namespace Crossing
 {
