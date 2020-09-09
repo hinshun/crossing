@@ -14,6 +14,8 @@ using Eco.Simulation.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Eco.Gameplay.Items;
 using Eco.Gameplay.Systems.Tooltip;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Crossing
 {
@@ -22,6 +24,8 @@ namespace Crossing
         private static Guild Guild => AutoSingleton<Guild>.Obj;
 
         private readonly IdentityManager _identity;
+
+        private readonly Regex _mentionRegex;
 
         private DiscordSocketClient _client;
 
@@ -43,6 +47,7 @@ namespace Crossing
         public Blathers(IServiceProvider services)
         {
             _identity = services.GetRequiredService<IdentityManager>();
+            _mentionRegex = new Regex(@"<[@#!&]*(:[^:]*:)?([^>]*)>");
         }
 
         public async Task InitializeAsync(DiscordSocketClient discord)
@@ -96,11 +101,18 @@ namespace Crossing
                 return Task.CompletedTask;
             }
 
-            switch (message.Channel.Name)
+            if (Environment.GetEnvironmentVariable("STAGING") == "1")
             {
-                case "general":
+                if (message.Channel.Name == "staging")
+                {
                     HandleGeneral(message);
-                    break;
+                }
+            } 
+            else {
+                if (message.Channel.Name == "general")
+                {
+                    HandleGeneral(message);
+                }
             }
 
             return Task.CompletedTask;
@@ -114,13 +126,80 @@ namespace Crossing
             var user = UserManager.FindUserBySteamId(steamId);
             if (user != null)
             {
-                Log.WriteLine(Localizer.Do($"Discord->ECO {message.Author.Username}: {message.Content}"));
+                StringBuilder content = new StringBuilder();
+                int curr = 0;
+                foreach (Match match in _mentionRegex.Matches(message.Content))
+                {
+                    content.Append(message.Content.Substring(curr, match.Index - curr));
+                    curr = match.Index + match.Length;
+
+                    // Handle emotes
+                    if (match.Groups[1].Value.Length > 2)
+                    {
+                        content.Append(match.Groups[1].Value);
+                        continue;
+                    }
+
+                    // Handle mentions
+                    string value = match.Groups[2].Value;
+                    ulong snowflakeId = Convert.ToUInt64(value);
+
+                    bool matched = false;
+                    foreach (SocketUser mention in message.MentionedUsers)
+                    {
+                        if (mention.Id == snowflakeId)
+                        {
+                            string mentionSteamId = _identity.DiscordToSteam.GetOrDefault(value);
+                            User ecoMention = UserManager.FindUserBySteamId(mentionSteamId);
+                            if (ecoMention == null)
+                            {
+                                content.Append($"@{mention.Username}");
+                            }
+                            else
+                            {
+                                content.Append($"{ecoMention.UILink()}");
+                            }
+
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    if (!matched)
+                    {
+                        foreach (SocketRole mention in message.MentionedRoles)
+                        {
+                            if (mention.Id == snowflakeId)
+                            {
+                                content.Append($"@{mention.Name}");
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!matched)
+                    {
+                        foreach (SocketGuildChannel mention in message.MentionedChannels)
+                        {
+                            if (mention.Id == snowflakeId)
+                            {
+                                content.Append($"#{mention.Name}");
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                content.Append(message.Content.Substring(curr, message.Content.Length - curr));
+
+                Log.WriteLine(Localizer.Do($"Discord->ECO {message.Author.Username}: {content.ToString()}"));
                 ChatMessage msg = new ChatMessage
                 {
                     Tag = DefaultChatTags.General.TagName(),
                     Sender = user.Name,
                     SenderUILink = user.UILink(),
-                    Text = message.Content,
+                    Text = content.ToString(),
                     TimeSeconds = WorldTime.Seconds,
                     Category = MessageCategory.Chat
                 };

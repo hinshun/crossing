@@ -36,18 +36,36 @@ namespace Crossing
             UserManager.OnUserLoggedOut.Add(OnUserLogout);
             _identity = services.GetRequiredService<IdentityManager>();
             _blathers = services.GetRequiredService<Blathers>();
-            _generalWebhook = new DiscordWebhookClient(
-                $"https://discordapp.com/api/webhooks/751573692974366762/{Environment.GetEnvironmentVariable("GENERAL_TOKEN")}"
-            );
-            _activityWebhook = new DiscordWebhookClient(
-                $"https://discordapp.com/api/webhooks/752403339513167913/{Environment.GetEnvironmentVariable("ACTIVITY_TOKEN")}"
-            );
-            _govWebhook = new DiscordWebhookClient(
-                $"https://discordapp.com/api/webhooks/752408226821308508/{Environment.GetEnvironmentVariable("GOV_TOKEN")}"
-            );
-            _workWebhook = new DiscordWebhookClient(
-                $"https://discordapp.com/api/webhooks/752574266272383037/{Environment.GetEnvironmentVariable("WORK_TOKEN")}"
-            );
+
+            if (Environment.GetEnvironmentVariable("STAGING") == "1")
+            {
+                _generalWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752574773137113198/{Environment.GetEnvironmentVariable("STAGING_TOKEN")}"
+                );
+                _activityWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752574773137113198/{Environment.GetEnvironmentVariable("STAGING_TOKEN")}"
+                );
+                _govWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752574773137113198/{Environment.GetEnvironmentVariable("STAGING_TOKEN")}"
+                );
+                _workWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752574773137113198/{Environment.GetEnvironmentVariable("STAGING_TOKEN")}"
+                );
+            }
+            else {
+                _generalWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/751573692974366762/{Environment.GetEnvironmentVariable("GENERAL_TOKEN")}"
+                );
+                _activityWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752403339513167913/{Environment.GetEnvironmentVariable("ACTIVITY_TOKEN")}"
+                );
+                _govWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752408226821308508/{Environment.GetEnvironmentVariable("GOV_TOKEN")}"
+                );
+                _workWebhook = new DiscordWebhookClient(
+                    $"https://discordapp.com/api/webhooks/752574266272383037/{Environment.GetEnvironmentVariable("WORK_TOKEN")}"
+                );
+            }
         }
 
         private void OnUserLogin(User user)

@@ -44,8 +44,12 @@ fs eco() {
 	image "strangeloopgames/eco-game-server:0.9.0.1-beta"
 }
 
-fs microsoftDeb() {
-	http "https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb"
+fs _microsoftDeb() {
+	image "alpine"
+	run "apk add -U curl"
+	run "curl -fL https://packages.microsoft.com/config/ubuntu/19.10/packages-microsoft-prod.deb -o /out/packages-microsoft-prod.deb" with option {
+		mount scratch "/out" as microsoftDeb
+	}
 }
 
 fs dotnet() {
