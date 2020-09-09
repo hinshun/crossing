@@ -211,14 +211,17 @@ namespace Crossing
                 case GainProfession gainProfession:
                     break;
                 case CreateWorkOrder createWork:
+                    if (createWork.WorkOrder == null) { return; }
                     username = Username(createWork.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** started a work order for **{createWork.WorkOrder.DisplayName}**");
                     break;
                 case AddToWorkOrderAction addWork:
+                    if (addWork.ItemUsed == null || addWork.WorkOrder == null ) { return; }
                     username = Username(addWork.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** contributed **{addWork.ItemsMoved}** **{addWork.ItemUsed.DisplayName}** to the work order **{addWork.WorkOrder.DisplayName}**");
                     break;
                 case LaborWorkOrderAction laborWork:
+                    if (laborWork.WorkOrder == null ) { return; }
                     username = Username(laborWork.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** performed **{laborWork.LaborAdded}** units of labor on **{laborWork.WorkOrder.DisplayName}**");
                     break;
