@@ -13,6 +13,10 @@ using Eco.Shared.Items;
 using System.Text;
 using Eco.Shared.Localization;
 using Eco.Gameplay.Utils;
+using Eco.Gameplay.Skills;
+using System.Linq;
+using System.IO;
+using System.Diagnostics;
 
 namespace Crossing.Modules
 {
@@ -36,56 +40,59 @@ namespace Crossing.Modules
             User user = UserManager.FindUserBySteamId(steamId);
             if (user == null)
             {
-                await ReplyAsync($"User is not linked");
+                await ReplyAsync($"Your ECO user must be linked to discord to use this command.");
                 return;
             }
 
             Item item = CommandsUtil.ClosestMatchingEntity(user.Player, itemName, Item.AllItems, (Item x) => x.GetType().Name, (Item x) => x.DisplayName);
 			if (item == null)
 			{
-                await ReplyAsync($"No item found matching `{itemName}`");
+                await ReplyAsync($"Could not find skill tree matching `{itemName}`.");
 				return;
 			}
 
             List<TooltipSection> sections = new List<TooltipSection>();
-            AddItemTooltipSections(sections, item, user.Player);
 
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine(item.DisplayDescription);
-            stringBuilder.AppendLine("");
 
 			TooltipSection section = item.CraftingRequirementsTooltip(TooltipContext(user.Player));
             if (section != null && section.Content != null && section.Content.ToString().StripTags().Length != 0)
             {
-                stringBuilder.AppendLine("**Crafting requirements**");
+                stringBuilder.AppendLine("");
+                stringBuilder.AppendLine("**Crafting requirements:**");
                 stringBuilder.AppendLine(section.Content.ToString().StripTags());
             }
 
             section = item.UsedInTooltip(TooltipContext(user.Player));
             if (section != null && section.Content != null && section.Content.ToString().StripTags().Length != 0)
             {
-                stringBuilder.AppendLine("**Used by**");
+                stringBuilder.AppendLine("");
+                stringBuilder.AppendLine("**Used by:**");
                 stringBuilder.AppendLine(section.Content.ToString().StripTags());
             }
 
             section = item.SellItTooltip(TooltipContext(user.Player));
             if (section != null && section.Content != null && section.Content.ToString().StripTags().Length != 0)
             {
-                stringBuilder.AppendLine("**Buyers**");
+                stringBuilder.AppendLine("");
+                stringBuilder.AppendLine("**Buyers:**");
                 stringBuilder.AppendLine(section.Content.ToString().StripTags());
             }
             
             section = item.BuyItTooltip(TooltipContext(user.Player));
             if (section != null && section.Content != null && section.Content.ToString().StripTags().Length != 0)
             {
-                stringBuilder.AppendLine("**Sellers**");
+                stringBuilder.AppendLine("");
+                stringBuilder.AppendLine("**Sellers:**");
                 stringBuilder.AppendLine(section.Content.ToString().StripTags());
             }
 
             section = item.SourceSpeciesTooltip(TooltipContext(user.Player));
             if (section != null && section.Content != null && section.Content.ToString().StripTags().Length != 0)
             {
-                stringBuilder.AppendLine("**Dropped from**");
+                stringBuilder.AppendLine("");
+                stringBuilder.AppendLine("**Dropped from:**");
                 stringBuilder.AppendLine(section.Content.ToString().StripTags());
             }
 
@@ -111,14 +118,71 @@ namespace Crossing.Modules
             };
         }
 
-        private void AddItemTooltipSections(System.Collections.Generic.ICollection<TooltipSection> sections, Item item, Player player)
+        [Command("skilltree")]
+        public async Task SkillTreeAsync()
         {
-            /*
-			sections.Add(item.SourceSpeciesTooltip(context));
-			sections.Add(item.BuyItTooltip(context));
-			sections.Add(item.SellItTooltip(context));
-			sections.Add(item.UsedInTooltip(context));
-            */
+            string dotPng = SkillTreeVisualizer.BuildAll();
+            FileStream dotStream = File.Open(dotPng, FileMode.Open);
+
+            var embed = new EmbedBuilder()
+            {
+                Title = "Skill Tree",
+                ImageUrl = $"attachment://skilltree.png"
+            };
+
+            await Context.Channel.SendFileAsync(
+                dotStream,
+                "skilltree.png",
+                "",
+                false,
+                embed.Build()
+            );
+
+            File.Delete(dotPng);
         }
+    }
+
+    public class SkillTreeVisualizer
+    {
+        public static string BuildAll()
+		{
+			string str = "digraph{\r\nrankdir=LR;\r\n";
+            foreach(SkillTree skillTree in SkillTree.RootSkillTrees)
+            {
+                str += GetSkillGraphEntries(skillTree);
+            }
+			str += "}\r\n";
+			return MakeImage(str);
+		}
+
+		private static string GetSkillGraphEntries(SkillTree skill)
+		{
+			string text = "<<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\">" + $"<tr><td bgcolor=\"Yellow\"><B>{skill.StaticSkill.DisplayName}</B></td></tr>" + "</table>>";
+			string empty = string.Empty;
+			string text2 = $"\"{skill.StaticSkill.DisplayName}\"";
+			empty = empty + text2 + "[label=" + text + " shape=\"record\"]\r\n";
+			empty += $"\"{skill.StaticSkill.DisplayName}\" -> {{{Enumerable.Select(skill.Children, (SkillTree c) => $"\"{c.StaticSkill.DisplayName}\"").CommaList()}}};\r\n";
+			return empty + Enumerable.Select(skill.Children, (SkillTree child) => GetSkillGraphEntries(child)).TextList();
+		}
+
+		private static string MakeImage(string s)
+		{
+            string dotFile = $"/tmp/{StringUtils.RandomString(10)}.dot";
+			File.WriteAllText(dotFile, s);
+
+            string dotPng = $"/tmp/{StringUtils.RandomString(10)}.png";
+
+			Process process = new Process();
+			process.StartInfo.UseShellExecute = false;
+			process.StartInfo.RedirectStandardOutput = true;
+			process.StartInfo.FileName = "/usr/bin/dot";
+			process.StartInfo.Arguments = $"{dotFile} -Tpng -o {dotPng}";
+			process.Start();
+
+			string text2 = process.StandardOutput.ReadToEnd();
+			process.WaitForExit();
+
+            return dotPng;
+		}
     }
 }
