@@ -1,9 +1,12 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Crossing.Modules;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Eco.Shared.Localization;
+using Eco.Shared.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Crossing.Services
@@ -17,7 +20,6 @@ namespace Crossing.Services
         public CommandHandlingService(IServiceProvider services)
         {
             _commands = services.GetRequiredService<CommandService>();
-            //_discord = services.GetRequiredService<DiscordSocketClient>();
             _services = services;
 
             // Hook CommandExecuted to handle post-command-execution logic.
@@ -31,8 +33,7 @@ namespace Crossing.Services
             // if it qualifies as a command.
             _discord.MessageReceived += MessageReceivedAsync;
 
-            // Register modules that are public and inherit ModuleBase<T>.
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+            await _commands.AddModuleAsync<PublicModule>(_services);
         }
 
         public async Task MessageReceivedAsync(SocketMessage rawMessage)
@@ -44,10 +45,11 @@ namespace Crossing.Services
             // This value holds the offset where the prefix ends
             var argPos = 0;
 
+
             // Perform prefix check. You may want to replace this with
             // (!message.HasCharPrefix('!', ref argPos))
             // for a more traditional command format like !help.
-            if (!message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
+            if (!message.HasCharPrefix('!', ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
             // Perform the execution of the command. In this method,

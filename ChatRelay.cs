@@ -90,24 +90,25 @@ namespace Crossing
                     if (election.ElectedTitle == null) { break; }
 
                     string username = Username(election.Citizen);
-                    string timeLeft = TimeFormatter.FormatSimple(TimeSpan.FromSeconds(election.ElectionProcess.Election.TimeLeft));
-                    await ECOMessage(_govWebhook, $"**{username}** started an election for **{election.ElectedTitle}**! The election will end in **{timeLeft}**.");
+                    await ECOMessage(_govWebhook, $"**{username}** started an election for **{election.ElectedTitle}**!");
                     break;
                 case JoinOrLeaveElection election:
                     username = Username(election.Citizen);
                     switch (election.EnteredOrLeftElection)
                     {
                         case EnteredOrLeftElection.EnteringElection:
+                            /*
+                            // Currently JoinOrLeaveElection is performed before choice (with Speech) is actually added.
                             var electionEmbed = new EmbedBuilder
                             {
                                 Author = AuthorBuilder(election.Citizen),
-                                Description = election.Election.GetChoiceById(election.Citizen.Id).Describe
+                                Description = election.Election.GetChoiceById(election.Citizen.Id).Describe.StripTags()
                             };
+                            */
 
-                            await ECOEmbed(
+                            await ECOMessage(
                                 _govWebhook,
-                                $"**{username}** has entered the election for **{election.Election.PositionForWinner}**!",
-                                electionEmbed.Build()
+                                $"**{username}** has entered the election for **{election.Election.PositionForWinner}**!"
                             );
                             break;
                         case EnteredOrLeftElection.LeavingElection:

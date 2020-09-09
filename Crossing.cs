@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Crossing.Services;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Crossing.Modules;
 
 namespace Crossing
 {
@@ -34,9 +35,10 @@ namespace Crossing
             using (var services = ConfigureServices())
             {
                 services.GetRequiredService<IdentityManager>().Initialize();
-                services.GetRequiredService<CommandHandlingService>().InitializeAsync(blatherDiscord).Wait();
+                services.GetRequiredService<CommandHandlingService>().InitializeAsync(isabelleDiscord).Wait();
                 services.GetRequiredService<Blathers>().InitializeAsync(blatherDiscord).Wait();
                 services.GetRequiredService<Isabelle>().InitializeAsync(isabelleDiscord).Wait();
+                PublicModule.Initialize(services);
                 EcoCommands.Initialize(services);
 
                 var relay = new ChatRelay(services);
