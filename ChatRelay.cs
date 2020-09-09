@@ -64,7 +64,13 @@ namespace Crossing
 
         public void ActionPerformed(GameAction action)
         {
-            ActionAsync(action).Wait();
+            try {
+                ActionAsync(action).Wait();
+            }
+            catch (Exception e)
+            {
+                Log.WriteLine(Localizer.Do($"[CHAT-RELAY] Error capturing GameAction {e.ToString()}"));
+            }
         }
 
         private async Task ActionAsync(GameAction action)
@@ -127,7 +133,7 @@ namespace Crossing
                         case EnteredOrLeftDemographic.EnteringDemographic:
                             var changeEmbed = new EmbedBuilder
                             {
-                                Description = change.Demographic.Description()
+                                Description = change.Demographic.Description().ToString().StripTags()
                             };
                             await ECOEmbed(
                                 _govWebhook,
@@ -164,6 +170,7 @@ namespace Crossing
                     await ECOMessage(_activityWebhook, $"**{username}** has received **{govFunds.Amount} {govFunds.Currency.Name}** for government work.");
                     break;
                 case PostedContract postedContract:
+                    if (postedContract.Client == null || postedContract.Currency == null) { return; }
                     IEnumerable<Contract> contracts = from x in Enumerable.Where(ContractManager.Contracts, (Contract x) => x.Client == postedContract.Client.Name)
                         orderby x.CreationTime
                         select x;
@@ -184,6 +191,7 @@ namespace Crossing
                     );
                     break;
                 case PostedWorkParty postedWorkParty:
+                    if (postedWorkParty.Client == null || postedWorkParty.Currency == null) { return; }
                     IEnumerable<WorkParty> relevantParties = WorkPartyManager.RelevantWorkParties(postedWorkParty.Client.Player);
                     IEnumerable<WorkParty> workParties = from x in Enumerable.Where(relevantParties, (WorkParty x) => x.Creator == postedWorkParty.Client)
                         orderby x.CreationTime
@@ -205,6 +213,7 @@ namespace Crossing
                     );
                     break;
                 case GainSpecialty gainSpecialty:
+                    if (gainSpecialty.Specialty == null) { return; }
                     username = Username(gainSpecialty.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** took a new specialty in **{gainSpecialty.Specialty.DisplayName}**");
                     break;
@@ -214,11 +223,6 @@ namespace Crossing
                     if (createWork.WorkOrder == null) { return; }
                     username = Username(createWork.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** started a work order for **{createWork.WorkOrder.DisplayName}**");
-                    break;
-                case AddToWorkOrderAction addWork:
-                    if (addWork.ItemUsed == null || addWork.WorkOrder == null ) { return; }
-                    username = Username(addWork.Citizen);
-                    await ECOMessage(_activityWebhook, $"**{username}** contributed **{addWork.ItemsMoved}** **{addWork.ItemUsed.DisplayName}** to the work order **{addWork.WorkOrder.DisplayName}**");
                     break;
                 case LaborWorkOrderAction laborWork:
                     if (laborWork.WorkOrder == null ) { return; }
@@ -262,11 +266,12 @@ namespace Crossing
 
         private EmbedAuthorBuilder AuthorBuilder(User user)
         {
-            SocketUser discordUser = DiscordUser(user);
             var author = new EmbedAuthorBuilder
             {
                 Name = Username(user)
             };
+
+            SocketUser discordUser = DiscordUser(user);
             if (discordUser != null)
             {
                 author.WithIconUrl(discordUser.GetDefaultAvatarUrl());
@@ -276,6 +281,11 @@ namespace Crossing
 
         private SocketUser DiscordUser(User user)
         {
+            if (user == null)
+            {
+                return null;
+            }
+
             string discordId = _identity.SteamToDiscord.GetOrDefault(user.SteamId);
             if (discordId == "") { return null; }
 
@@ -285,6 +295,10 @@ namespace Crossing
 
         private string Username(User user)
         {
+            if (user == null)
+            {
+                return "";
+            }
             SocketUser discordUser = DiscordUser(user);
             if (discordUser == null)
             {
@@ -298,7 +312,7 @@ namespace Crossing
             User user = UserManager.FindUserByName(name);
             if (user == null)
             {
-                return "";
+                return name;
             }
             return Username(user);
         }
