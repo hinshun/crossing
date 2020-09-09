@@ -58,7 +58,7 @@ namespace Crossing.Modules
             Item item = CommandsUtil.ClosestMatchingEntity(user.Player, itemName, Item.AllItems, (Item x) => x.GetType().Name, (Item x) => x.DisplayName);
 			if (item == null)
 			{
-                await ReplyAsync($"Could not find skill tree matching `{itemName}`.");
+                await ReplyAsync($"Could not find item matching `{itemName}`.");
 				return;
 			}
 
