@@ -35,9 +35,6 @@ namespace Crossing.Modules
         {
             StringBuilder stringBuilder = new StringBuilder();
 
-            stringBuilder.AppendLine("**Help**");
-            stringBuilder.AppendLine("");
-
             stringBuilder.AppendLine("`!item <Item Name>` - Queries the item's crafting requirements, buyers, sellers, and items that uses it.");
             stringBuilder.AppendLine("`!skilltree` - Fetches a visualization of the skill tree.");
 
