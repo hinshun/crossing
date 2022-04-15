@@ -117,6 +117,8 @@ namespace Crossing
                     await ECOMessage(_govWebhook, $"**{username}** started an election for **{election.ElectedTitle}**!");
                     break;
                 case JoinOrLeaveElection election:
+                    if (election.Election == null) { break; }
+
                     username = Username(election.Citizen);
                     switch (election.EnteredOrLeftElection)
                     {
@@ -141,6 +143,7 @@ namespace Crossing
                     }
                     break;
                 case WonElection election:
+                    if (election.Election == null) { break; }
                     username = Username(election.Citizen);
                     await ECOMessage(_govWebhook, $"**{username}** has won the election for **{election.Election.PositionForWinner}**!");
                     break;
@@ -165,6 +168,7 @@ namespace Crossing
                     }
                     break;
                 case PropertyTransfer propTransfer:
+                    if (propTransfer.CurrentOwner == null || propTransfer.NewOwner == null) { break; }
                     string executor = Username(propTransfer.Citizen);
                     string currentOwner = Username(propTransfer.CurrentOwner.Name);
                     string newOwner = Username(propTransfer.NewOwner.Name);
@@ -172,6 +176,7 @@ namespace Crossing
                     await ECOMessage(_activityWebhook, $"**{executor}** transferred a property of **{currentOwner}** to **{newOwner}**.");
                     break;
                 case ClaimOrUnclaimProperty propClaim:
+                    if (propClaim.Location == null) { break; }
                     username = Username(propClaim.Citizen);
                     switch (propClaim.ClaimedOrUnclaimed)
                     {
@@ -184,6 +189,7 @@ namespace Crossing
                     }
                     break;
                 case ReceiveGovernmentFunds govFunds:
+                    if (govFunds.Currency == null) { break; }
                     username = Username(govFunds.Citizen);
                     await ECOMessage(_activityWebhook, $"**{username}** has received **{govFunds.Amount} {govFunds.Currency.Name}** for government work.");
                     break;
@@ -315,7 +321,7 @@ namespace Crossing
         {
             if (user == null)
             {
-                return "";
+                return "A player";
             }
             SocketUser discordUser = DiscordUser(user);
             if (discordUser == null)

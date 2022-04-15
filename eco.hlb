@@ -41,7 +41,8 @@ fs src() {
 }
 
 fs eco() {
-	image "strangeloopgames/eco-game-server:0.9.0.1-beta"
+	# image "strangeloopgames/eco-game-server:0.9.0.1-beta"
+	image "strangeloopgames/eco-game-server:0.9.0.2-beta-staging-1788"
 }
 
 fs _microsoftDeb() {
@@ -59,8 +60,15 @@ fs dotnet() {
 		mount microsoftDeb "/in" with readonly
 	}
 	run "apt-get update && apt-get install --no-install-recommends -y netbase dotnet-sdk-3.1 libc6 libgcc1 libgssapi-krb5-2 libicu63 libssl1.1 libstdc++6 zlib1g"
-	# copy eco "/usr/share/dotnet" "/usr/share/dotnet"
-	# run "ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet"
+}
+
+fs listDll() {
+	image "alpine"
+	run "ls -la" with option {
+		ignoreCache
+		dir "/in"
+		mount dll "/in"
+	}
 }
 
 fs _dll() {

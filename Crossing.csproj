@@ -10,6 +10,9 @@
     <Reference Include="Eco.Gameplay">
       <HintPath>./dll/Eco.Gameplay.dll</HintPath>
     </Reference>
+    <Reference Include="Eco.IntegrationTests">
+      <HintPath>./dll/Eco.IntegrationTests.dll</HintPath>
+    </Reference>
     <Reference Include="Eco.ModKit">
       <HintPath>./dll/Eco.ModKit.dll</HintPath>
     </Reference>
